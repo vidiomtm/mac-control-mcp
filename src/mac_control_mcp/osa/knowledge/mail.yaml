@@ -1,0 +1,69 @@
+- id: mail_search_subject
+  app: Mail
+  lang: applescript
+  summary: Search Mail for messages with subject containing a query string
+  tags: [mail, search, subject, email]
+  args: [{name: query, description: Subject search term}]
+  script: |
+    on run argv
+        set q to item 1 of argv
+        tell application "Mail"
+            set found to {}
+            repeat with msg in (messages of inbox)
+                if subject of msg contains q then
+                    set end of found to {subject:subject of msg, sender:sender of msg, date_received:(date received of msg) as string}
+                end if
+                if (count of found) >= 20 then exit repeat
+            end repeat
+        end tell
+        return found as string
+    end run
+
+- id: mail_recent_messages
+  app: Mail
+  lang: jxa
+  summary: Get recent messages from inbox (paginated, newest first)
+  tags: [mail, inbox, recent, list]
+  args: [{name: limit, description: "Max messages (default 20)"}]
+  script: |
+    function run(argv) {
+      var limit = argv[0] ? parseInt(argv[0]) : 20;
+      var mail = Application("Mail");
+      var msgs = mail.inbox.messages();
+      var results = [];
+      var count = Math.min(limit, msgs.length);
+      for (var i = 0; i < count; i++) {
+        var m = msgs[i];
+        results.push({
+          subject: m.subject(),
+          sender: m.sender(),
+          date_received: m.dateReceived().toString(),
+          read: m.readStatus()
+        });
+      }
+      return JSON.stringify(results);
+    }
+
+- id: mail_compose_send
+  app: Mail
+  lang: applescript
+  summary: Compose and send an email
+  tags: [mail, send, compose, email]
+  args:
+    - {name: to, description: Recipient email address}
+    - {name: subject, description: Email subject}
+    - {name: body, description: Email body text}
+  script: |
+    on run argv
+        set toAddr to item 1 of argv
+        set subj to item 2 of argv
+        set bodyText to item 3 of argv
+        tell application "Mail"
+            set newMsg to make new outgoing message with properties {subject:subj, content:bodyText, visible:false}
+            tell newMsg
+                make new to recipient with properties {address:toAddr}
+            end tell
+            send newMsg
+        end tell
+        return "sent"
+    end run

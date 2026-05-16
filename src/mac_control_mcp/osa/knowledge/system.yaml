@@ -1,0 +1,117 @@
+- id: system_get_volume
+  app: System
+  lang: applescript
+  summary: Get current system output volume level (0-100)
+  tags: [system, volume, audio, sound]
+  args: []
+  script: |
+    tell application "System Events"
+        set vol to output volume of (get volume settings)
+    end tell
+    return vol
+
+- id: system_set_volume
+  app: System
+  lang: applescript
+  summary: Set system output volume (0-100)
+  tags: [system, volume, set, audio, sound]
+  args:
+    - {name: level, description: "Volume level 0-100"}
+  script: |
+    on run argv
+        set level to item 1 of argv as integer
+        set volume output volume level
+        return "volume set to " & level
+    end run
+
+- id: system_get_frontmost_app
+  app: System
+  lang: applescript
+  summary: Get the name of the currently focused application
+  tags: [system, frontmost, active, focus, app]
+  args: []
+  script: |
+    tell application "System Events"
+        set frontApp to name of first process whose frontmost is true
+    end tell
+    return frontApp
+
+- id: system_list_running_apps
+  app: System
+  lang: jxa
+  summary: List all running applications with PIDs
+  tags: [system, apps, running, processes, list]
+  args: []
+  script: |
+    ObjC.import('AppKit');
+    function run() {
+      var workspace = $.NSWorkspace.sharedWorkspace;
+      var apps = workspace.runningApplications;
+      var results = [];
+      for (var i = 0; i < apps.count; i++) {
+        var app = apps.objectAtIndex(i);
+        var name = app.localizedName ? app.localizedName.js : null;
+        if (name) {
+          results.push({
+            name: name,
+            pid: app.processIdentifier,
+            bundle_id: app.bundleIdentifier ? app.bundleIdentifier.js : null
+          });
+        }
+      }
+      return JSON.stringify(results);
+    }
+
+- id: system_quit_app
+  app: System
+  lang: applescript
+  summary: Quit an application by name
+  tags: [system, quit, close, app, terminate]
+  args:
+    - {name: app_name, description: Application name}
+  script: |
+    on run argv
+        set appName to item 1 of argv
+        tell application appName to quit
+        return "quit: " & appName
+    end run
+
+- id: system_open_url
+  app: System
+  lang: applescript
+  summary: Open a URL in the default browser
+  tags: [system, open, url, browser, web]
+  args:
+    - {name: url, description: URL to open}
+  script: |
+    on run argv
+        set targetURL to item 1 of argv
+        do shell script "open " & quoted form of targetURL
+        return "opened: " & targetURL
+    end run
+
+- id: system_screenshot_to_file
+  app: System
+  lang: applescript
+  summary: Take a screenshot and save to a file path
+  tags: [system, screenshot, capture, save]
+  args:
+    - {name: path, description: "Output file path (e.g. /tmp/shot.png)"}
+  script: |
+    on run argv
+        set outPath to item 1 of argv
+        do shell script "screencapture -x " & quoted form of outPath
+        return "saved: " & outPath
+    end run
+
+- id: system_empty_trash
+  app: Finder
+  lang: applescript
+  summary: Empty the Finder trash
+  tags: [system, trash, empty, finder, cleanup]
+  args: []
+  script: |
+    tell application "Finder"
+        empty trash
+    end tell
+    return "trash emptied"

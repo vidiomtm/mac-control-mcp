@@ -1,0 +1,92 @@
+- id: reminders_list
+  app: Reminders
+  lang: jxa
+  summary: List reminders, optionally filtered by list name and completion status
+  tags: [reminders, list, todo, task]
+  args:
+    - {name: list_name, description: "Reminders list name (empty = all lists)"}
+    - {name: completed, description: "true/false (default false)"}
+    - {name: limit, description: "Max reminders (default 50)"}
+  script: |
+    function run(argv) {
+      var listName = argv[0] || "";
+      var completed = argv[1] === "true";
+      var limit = argv[2] ? parseInt(argv[2]) : 50;
+      var app = Application("Reminders");
+      var results = [];
+      var lists = listName ? [app.lists[listName]] : app.lists();
+      for (var li = 0; li < lists.length && results.length < limit; li++) {
+        var reminders = lists[li].reminders.whose({completed: completed})();
+        for (var ri = 0; ri < reminders.length && results.length < limit; ri++) {
+          var r = reminders[ri];
+          var due = null;
+          try { due = r.dueDate() ? r.dueDate().toString() : null; } catch(e) {}
+          results.push({
+            name: r.name(),
+            completed: r.completed(),
+            due: due,
+            list: lists[li].name(),
+            notes: r.body() || null
+          });
+        }
+      }
+      return JSON.stringify(results);
+    }
+
+- id: reminders_add
+  app: Reminders
+  lang: applescript
+  summary: Add a new reminder to a list
+  tags: [reminders, add, create, todo, task]
+  args:
+    - {name: name, description: Reminder text}
+    - {name: list_name, description: "List name (empty = default list)"}
+    - {name: due_date, description: "Due date string e.g. '2026-05-20 09:00' (optional)"}
+    - {name: notes, description: "Notes body (optional)"}
+  script: |
+    on run argv
+        set rName to item 1 of argv
+        set listName to ""
+        set dueStr to ""
+        set notesText to ""
+        if (count of argv) >= 2 then set listName to item 2 of argv
+        if (count of argv) >= 3 then set dueStr to item 3 of argv
+        if (count of argv) >= 4 then set notesText to item 4 of argv
+        tell application "Reminders"
+            if listName is "" then
+                set targetList to default list
+            else
+                set targetList to list listName
+            end if
+            set props to {name:rName}
+            if dueStr is not "" then set dueDate to (date dueStr)
+            if notesText is not "" then set props to props & {body:notesText}
+            set newR to make new reminder at end of targetList with properties props
+            if dueStr is not "" then set due date of newR to (date dueStr)
+        end tell
+        return "created: " & rName
+    end run
+
+- id: reminders_complete
+  app: Reminders
+  lang: applescript
+  summary: Mark a reminder as complete by name
+  tags: [reminders, complete, done, check]
+  args:
+    - {name: name, description: Exact reminder name}
+    - {name: list_name, description: "List name (empty = search all)"}
+  script: |
+    on run argv
+        set rName to item 1 of argv
+        set listName to ""
+        if (count of argv) >= 2 then set listName to item 2 of argv
+        tell application "Reminders"
+            if listName is "" then
+                set found to (first reminder whose name is rName)
+            else
+                set found to (first reminder of list listName whose name is rName)
+            end if
+            set completed of found to true
+        end tell
+        return "completed"
+    end run

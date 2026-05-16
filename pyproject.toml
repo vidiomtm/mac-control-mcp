@@ -1,0 +1,71 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mac-control-mcp"
+version = "0.1.0"
+description = "Unified macOS automation MCP server — AX tree, vision/OCR, AppleScript/JXA, Apple apps"
+requires-python = ">=3.11"
+readme = "README.md"
+license = { text = "MIT" }
+keywords = ["mcp", "macos", "automation", "accessibility", "applescript"]
+dependencies = [
+    "mcp>=1.2",
+    "pyobjc-core>=10.0",
+    "pyobjc-framework-Cocoa>=10.0",
+    "pyobjc-framework-ApplicationServices>=10.0",
+    "pyobjc-framework-Quartz>=10.0",
+    "pyobjc-framework-Vision>=10.0",
+    "rapidfuzz>=3.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.6",
+    "pyright>=1.1.380",
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-mock>=3.12",
+    "types-pyyaml",
+]
+
+[project.scripts]
+mac-control-mcp = "mac_control_mcp.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mac_control_mcp"]
+
+[tool.hatch.build.targets.wheel.sources]
+"src" = ""
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B011"]
+
+[tool.pyright]
+include = ["src"]
+exclude = ["**/__pycache__", "tests"]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+reportMissingImports = "warning"
+reportGeneralTypeIssues = "warning"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "unit: pure logic, no system calls",
+    "integration: subprocess/mdfind/AX calls (macOS only)",
+    "e2e: full JSON-RPC stdio roundtrip (macOS only)",
+]
+addopts = "-ra --strict-markers"
+asyncio_mode = "auto"

@@ -1,0 +1,89 @@
+- id: calendar_list_events_today
+  app: Calendar
+  lang: applescript
+  summary: List all calendar events for today
+  tags: [calendar, events, today, schedule]
+  args: []
+  script: |
+    tell application "Calendar"
+        set today to current date
+        set startOfDay to today - (time of today)
+        set endOfDay to startOfDay + 86399
+        set found to {}
+        repeat with cal in calendars
+            set evts to (every event of cal whose start date is greater than or equal to startOfDay and start date is less than or equal to endOfDay)
+            repeat with e in evts
+                set end of found to {title:summary of e, start:start date of e as string, end_date:end date of e as string, cal_name:name of cal}
+            end repeat
+        end repeat
+        return found as string
+    end tell
+
+- id: calendar_list_events_range
+  app: Calendar
+  lang: jxa
+  summary: List calendar events between two ISO dates (YYYY-MM-DD)
+  tags: [calendar, events, range, date]
+  args:
+    - {name: start_date, description: "Start date YYYY-MM-DD"}
+    - {name: end_date, description: "End date YYYY-MM-DD"}
+    - {name: limit, description: "Max events (default 50)"}
+  script: |
+    function run(argv) {
+      var start = new Date(argv[0]);
+      var end = new Date(argv[1]);
+      end.setHours(23, 59, 59);
+      var limit = argv[2] ? parseInt(argv[2]) : 50;
+      var cal = Application("Calendar");
+      var results = [];
+      var cals = cal.calendars();
+      for (var ci = 0; ci < cals.length && results.length < limit; ci++) {
+        var evts = cals[ci].events.whose({_and: [
+          {startDate: {_greaterThanEquals: start}},
+          {startDate: {_lessThanEquals: end}}
+        ]})();
+        for (var ei = 0; ei < evts.length && results.length < limit; ei++) {
+          var e = evts[ei];
+          results.push({
+            title: e.summary(),
+            start: e.startDate().toString(),
+            end: e.endDate().toString(),
+            calendar: cals[ci].name(),
+            location: e.location() || null
+          });
+        }
+      }
+      return JSON.stringify(results);
+    }
+
+- id: calendar_create_event
+  app: Calendar
+  lang: applescript
+  summary: Create a new calendar event
+  tags: [calendar, create, event, add]
+  args:
+    - {name: title, description: Event title}
+    - {name: start, description: "Start datetime e.g. '2026-05-15 14:00'"}
+    - {name: end, description: "End datetime e.g. '2026-05-15 15:00'"}
+    - {name: calendar_name, description: "Calendar name (default: first calendar)"}
+  script: |
+    on run argv
+        set evtTitle to item 1 of argv
+        set startStr to item 2 of argv
+        set endStr to item 3 of argv
+        set calName to ""
+        if (count of argv) >= 4 then set calName to item 4 of argv
+        tell application "Calendar"
+            if calName is "" then
+                set targetCal to first calendar
+            else
+                set targetCal to calendar calName
+            end if
+            set startDate to date startStr
+            set endDate to date endStr
+            tell targetCal
+                make new event with properties {summary:evtTitle, start date:startDate, end date:endDate}
+            end tell
+        end tell
+        return "created"
+    end run

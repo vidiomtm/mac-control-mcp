@@ -1,0 +1,81 @@
+- id: notes_search
+  app: Notes
+  lang: jxa
+  summary: Search Notes by title or body text
+  tags: [notes, search, find]
+  args:
+    - {name: query, description: Search term}
+    - {name: folder, description: "Folder name (empty = all)"}
+    - {name: limit, description: "Max results (default 20)"}
+  script: |
+    function run(argv) {
+      var query = (argv[0] || "").toLowerCase();
+      var folderName = argv[1] || "";
+      var limit = argv[2] ? parseInt(argv[2]) : 20;
+      var app = Application("Notes");
+      var results = [];
+      var folders = folderName ? [app.folders[folderName]] : app.folders();
+      for (var fi = 0; fi < folders.length && results.length < limit; fi++) {
+        var notes = folders[fi].notes();
+        for (var ni = 0; ni < notes.length && results.length < limit; ni++) {
+          var n = notes[ni];
+          var title = n.name() || "";
+          var body = n.plaintext() || "";
+          if (!query || title.toLowerCase().includes(query) || body.toLowerCase().includes(query)) {
+            results.push({
+              id: n.id(),
+              title: title,
+              folder: folders[fi].name(),
+              modified: n.modificationDate().toString(),
+              preview: body.substring(0, 200)
+            });
+          }
+        }
+      }
+      return JSON.stringify(results);
+    }
+
+- id: notes_get
+  app: Notes
+  lang: jxa
+  summary: Get full content of a note by ID
+  tags: [notes, get, read, body]
+  args:
+    - {name: note_id, description: Note ID from notes_search}
+  script: |
+    function run(argv) {
+      var noteId = argv[0];
+      var app = Application("Notes");
+      var note = app.notes.byId(noteId);
+      return JSON.stringify({
+        id: note.id(),
+        title: note.name(),
+        body: note.plaintext(),
+        modified: note.modificationDate().toString()
+      });
+    }
+
+- id: notes_create
+  app: Notes
+  lang: applescript
+  summary: Create a new note in a folder
+  tags: [notes, create, add, write]
+  args:
+    - {name: title, description: Note title}
+    - {name: body, description: Note body text}
+    - {name: folder, description: "Folder name (empty = default folder)"}
+  script: |
+    on run argv
+        set noteTitle to item 1 of argv
+        set noteBody to item 2 of argv
+        set folderName to ""
+        if (count of argv) >= 3 then set folderName to item 3 of argv
+        tell application "Notes"
+            if folderName is "" then
+                set newNote to make new note with properties {name:noteTitle, body:noteTitle & return & noteBody}
+            else
+                set newNote to make new note at folder folderName with properties {name:noteTitle, body:noteTitle & return & noteBody}
+            end if
+        end tell
+        return "created: " & noteTitle
+    end run

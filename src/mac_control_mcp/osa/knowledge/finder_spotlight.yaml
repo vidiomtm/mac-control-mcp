@@ -1,0 +1,103 @@
+- id: finder_list_tags
+  app: Finder
+  lang: jxa
+  summary: Get Finder tags on a file or folder
+  tags: [finder, tags, file, metadata]
+  args:
+    - {name: path, description: POSIX file path}
+  script: |
+    function run(argv) {
+      var path = argv[0];
+      var app = Application("Finder");
+      var item = app.items[path];
+      var tags = item.labelIndex();
+      // Use NSURL for tag names
+      var ObjC = Ref();
+      var url = $.NSURL.fileURLWithPath(path);
+      var tagNames = [];
+      url.getResourceValueForKeyError(ObjC, "NSURLTagNamesKey", null);
+      var val = ObjC[0];
+      if (val && val.isKindOfClass($.NSArray)) {
+        for (var i = 0; i < val.count; i++) {
+          tagNames.push(val.objectAtIndex(i).js);
+        }
+      }
+      return JSON.stringify({path: path, tags: tagNames});
+    }
+
+- id: finder_set_tags
+  app: Finder
+  lang: jxa
+  summary: Set Finder tags on a file or folder
+  tags: [finder, tags, file, metadata, set, label]
+  args:
+    - {name: path, description: POSIX file path}
+    - {name: tags, description: "Comma-separated tag names"}
+  script: |
+    function run(argv) {
+      var path = argv[0];
+      var tags = argv[1].split(",").map(function(t) { return t.trim(); });
+      ObjC.import("Foundation");
+      var url = $.NSURL.fileURLWithPath(path);
+      var nsArr = $.NSMutableArray.array();
+      tags.forEach(function(t) { nsArr.addObject($(t)); });
+      url.setResourceValueForKeyError(nsArr, "NSURLTagNamesKey", null);
+      return JSON.stringify({path: path, tags: tags, status: "set"});
+    }
+
+- id: spotlight_search
+  app: Finder
+  lang: applescript
+  summary: Search files using Spotlight mdfind
+  tags: [spotlight, search, find, mdfind, file]
+  args:
+    - {name: query, description: "Spotlight query e.g. 'kind:pdf author:smith'"}
+    - {name: limit, description: "Max results (default 50)"}
+  script: |
+    on run argv
+        set q to item 1 of argv
+        set lim to "50"
+        if (count of argv) >= 2 then set lim to item 2 of argv
+        set cmd to "mdfind -onlyin $HOME " & quoted form of q
+        try
+            set output to do shell script cmd
+            set resultList to paragraphs of output
+            if (count of resultList) > lim as integer then
+                set resultList to items 1 thru (lim as integer) of resultList
+            end if
+            return resultList as string
+        on error errMsg
+            return "error: " & errMsg
+        end try
+    end run
+
+- id: quicklook_file
+  app: Finder
+  lang: applescript
+  summary: Open a file in Quick Look preview
+  tags: [quicklook, preview, file, finder]
+  args:
+    - {name: path, description: POSIX file path}
+  script: |
+    on run argv
+        set filePath to item 1 of argv
+        do shell script "qlmanage -p " & quoted form of filePath & " > /dev/null 2>&1 &"
+        return "opened"
+    end run
+
+- id: finder_open_path
+  app: Finder
+  lang: applescript
+  summary: Open a file or folder in Finder
+  tags: [finder, open, folder, file]
+  args:
+    - {name: path, description: POSIX path to open}
+  script: |
+    on run argv
+        set p to item 1 of argv
+        tell application "Finder"
+            open (POSIX file p as alias)
+            activate
+        end tell
+        return "opened"
+    end run

@@ -1,0 +1,87 @@
+- id: messages_send
+  app: Messages
+  lang: applescript
+  summary: Send an iMessage or SMS to a phone number or Apple ID
+  tags: [messages, send, sms, imessage, chat]
+  args:
+    - {name: handle, description: "Phone number or email address"}
+    - {name: text, description: Message text}
+  script: |
+    on run argv
+        set targetHandle to item 1 of argv
+        set msgText to item 2 of argv
+        tell application "Messages"
+            set targetService to 1st account whose service type = iMessage
+            set targetBuddy to buddy targetHandle of targetService
+            send msgText to targetBuddy
+        end tell
+        return "sent"
+    end run
+
+- id: messages_recent
+  app: Messages
+  lang: jxa
+  summary: Get recent messages from a conversation
+  tags: [messages, recent, history, chat, conversation]
+  args:
+    - {name: handle, description: "Phone number, email, or name (empty = all chats)"}
+    - {name: limit, description: "Max messages (default 20)"}
+  script: |
+    function run(argv) {
+      var handle = argv[0] || "";
+      var limit = argv[1] ? parseInt(argv[1]) : 20;
+      var app = Application("Messages");
+      var results = [];
+      var chats = app.chats();
+      for (var ci = 0; ci < chats.length && results.length < limit; ci++) {
+        var chat = chats[ci];
+        var chatName = "";
+        try { chatName = chat.name() || ""; } catch(e) {}
+        if (handle && !chatName.toLowerCase().includes(handle.toLowerCase())) continue;
+        var msgs = chat.messages();
+        var count = Math.min(limit - results.length, msgs.length);
+        for (var mi = msgs.length - 1; mi >= msgs.length - count; mi--) {
+          var m = msgs[mi];
+          results.push({
+            chat: chatName,
+            sender: m.sender() ? m.sender().name() : "me",
+            body: m.content(),
+            date: m.dateSent().toString()
+          });
+        }
+      }
+      return JSON.stringify(results);
+    }
+
+- id: contacts_search
+  app: Contacts
+  lang: jxa
+  summary: Search contacts by name, email, or phone
+  tags: [contacts, search, address book, person]
+  args:
+    - {name: query, description: Search term (name, email, or phone)}
+    - {name: limit, description: "Max results (default 20)"}
+  script: |
+    function run(argv) {
+      var query = (argv[0] || "").toLowerCase();
+      var limit = argv[1] ? parseInt(argv[1]) : 20;
+      var app = Application("Contacts");
+      var people = app.people();
+      var results = [];
+      for (var i = 0; i < people.length && results.length < limit; i++) {
+        var p = people[i];
+        var name = (p.name() || "").toLowerCase();
+        var emails = p.emails().map(function(e) { return e.value() || ""; });
+        var phones = p.phones().map(function(ph) { return ph.value() || ""; });
+        var searchStr = [name].concat(emails).concat(phones).join(" ").toLowerCase();
+        if (!query || searchStr.includes(query)) {
+          results.push({
+            name: p.name(),
+            emails: emails,
+            phones: phones,
+            organization: p.organization() || null
+          });
+        }
+      }
+      return JSON.stringify(results);
+    }
