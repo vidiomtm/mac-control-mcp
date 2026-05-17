@@ -1,3 +1,6 @@
+---
+checksum: cad2e48957277ce28d3932fc8123ae4a53ed75f811c26a69d8e5f2f34dba1504
+---
 # SPEC: CLI & Server Interface
 
 **Version:** 0.1.0

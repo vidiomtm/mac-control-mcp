@@ -17,7 +17,7 @@ concurrency:
 jobs:
   repo-hygiene:
     name: Repo Hygiene
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "security", "macos"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,7 +31,7 @@ jobs:
 
   python-quality:
     name: Python Quality
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "python", "macos"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -52,7 +52,7 @@ jobs:
 
   dependency-scan:
     name: Dependency Scan
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "security", "macos"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -67,7 +67,7 @@ jobs:
 
   secret-scanning:
     name: Secret Scanning
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "security", "macos"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -80,7 +80,7 @@ jobs:
 
   codeql:
     name: CodeQL Security
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "security", "macos"]
     permissions:
       actions: read
       contents: read
@@ -102,7 +102,7 @@ jobs:
 
   mutation-test:
     name: Mutation Testing
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "python", "macos"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -119,7 +119,7 @@ jobs:
 
   sonarcloud:
     name: SonarCloud
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "security", "macos"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -133,7 +133,7 @@ jobs:
 
   required-checks:
     name: Required Checks (Merge)
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "security", "macos"]
     needs:
       - repo-hygiene
       - python-quality

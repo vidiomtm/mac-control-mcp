@@ -1,3 +1,6 @@
+---
+checksum: eb2a30871f0e175b6bb0ec1b9fa70349417913ccc45c40539719f88c9027a003
+---
 # SPEC: macOS UI Automation
 
 **Version:** 0.1.0
