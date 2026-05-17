@@ -14,7 +14,7 @@ concurrency:
 jobs:
   repo-hygiene:
     name: Repo Hygiene
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "security", "macos"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,7 +28,7 @@ jobs:
 
   python-quality:
     name: Python Quality
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "python", "macos"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,7 +49,7 @@ jobs:
 
   dependency-scan:
     name: Dependency Scan
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "security", "macos"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -64,7 +64,7 @@ jobs:
 
   secret-scanning:
     name: Secret Scanning
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "security", "macos"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -77,7 +77,7 @@ jobs:
 
   required-checks:
     name: Required Checks (PR)
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "security", "macos"]
     needs:
       - repo-hygiene
       - python-quality
