@@ -22,10 +22,11 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
       - name: Install PR-Agent
-        run: |
-          python3.13 -m venv /tmp/pr-agent-venv-py313
-          /tmp/pr-agent-venv-py313/bin/pip install pr-agent
+        run: uv tool install pr-agent
 
       - name: Run PR-Agent
         env:
@@ -34,4 +35,4 @@ jobs:
           CONFIG.MODEL: openai/qwen3.6-27b-mlx
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          /tmp/pr-agent-venv-py313/bin/pr_agent --include "${{ github.event.comment.body }}" --pr_url "${{ github.event.issue.pull_request.html_url }}"
+          uvx pr-agent --include "${{ github.event.comment.body }}" --pr_url "${{ github.event.issue.pull_request.html_url }}"
