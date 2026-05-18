@@ -1,0 +1,14 @@
+{
+  "threshold": 5,
+  "reporters": ["console"],
+  "ignore": [
+    "**/__pycache__/**",
+    "**/.venv/**",
+    "**/.pytest_cache/**",
+    "**/*.pyc",
+    "**/node_modules/**",
+    "**/tests/**"
+  ],
+  "languages": ["python"],
+  "format": "terminal"
+}
