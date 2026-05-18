@@ -1,0 +1,57 @@
+rules:
+  - id: no-hardcoded-secrets
+    pattern-either:
+      - pattern-regex: (?i)(?:api[_-]?key|secret|token|password|credential)\s*[:=]\s*["'][^"'\s]{8,}["']
+    message: Hardcoded secret detected
+    severity: ERROR
+    languages: [python]
+    paths:
+      exclude:
+        - tests/
+        - .venv/
+
+  - id: no-subprocess-shell-true
+    pattern: subprocess.$FUNC($CMD, shell=True, ...)
+    message: Avoid shell=True in subprocess to prevent shell injection
+    severity: WARNING
+    languages: [python]
+
+  - id: no-eval
+    pattern-either:
+      - pattern: eval($ARG)
+      - pattern: exec($ARG)
+    message: Avoid eval/exec - potential code injection
+    severity: ERROR
+    languages: [python]
+
+  - id: no-assert-in-non-test
+    patterns:
+      - pattern: assert $COND
+      - pattern-not-inside: |
+          def test_$NAME(...):
+            ...
+    message: assert used outside test file
+    severity: WARNING
+    languages: [python]
+    paths:
+      include:
+        - src/
+
+  - id: no-try-except-pass
+    patterns:
+      - pattern: |
+          try:
+            ...
+          except $EXC:
+            pass
+    message: Bare except with pass silently swallows errors
+    severity: WARNING
+    languages: [python]
+
+  - id: no-requests-without-timeout
+    patterns:
+      - pattern: requests.$METHOD(...)
+      - pattern-not: requests.$METHOD(..., timeout=$T, ...)
+    message: requests call without timeout
+    severity: WARNING
+    languages: [python]

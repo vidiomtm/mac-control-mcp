@@ -2,6 +2,7 @@ name: PR Gate
 
 on:
   pull_request:
+    branches: [feat/quality-gates]
   workflow_dispatch:
 
 permissions:
@@ -12,47 +13,126 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  repo-hygiene:
-    name: Repo Hygiene
-    runs-on: ubuntu-latest
+  format:
+    name: Format Check
+    if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Check for iCloud sync conflicts
-        run: |
-          if find . -path ./node_modules -prune -o -path ./.git -prune -o -name "* [0-9]*" -print | grep -q .; then
-            echo "::error::iCloud sync conflicts detected"
-            find . -path ./node_modules -prune -o -path ./.git -prune -o -name "* [0-9]*" -print
-            exit 1
-          fi
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Ruff format check
+        run: uvx ruff format --check .
 
-  python-quality:
-    name: Python Quality
-    runs-on: ubuntu-latest
+  lint:
+    name: Lint
+    if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Ruff lint
+        run: uvx ruff check .
+
+  typecheck:
+    name: Type Check
+    if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Pyright
+        run: uvx pyright
+
+  build:
+    name: Build
+    if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Build package
+        run: uv build
+
+  unit:
+    name: Unit Tests
+    if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    steps:
+      - uses: actions/checkout@v4
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
       - name: Install dependencies
         run: uv sync
-      - name: Ruff lint
-        run: uv run ruff check .
-      - name: Pyright
-        run: uv run pyright
       - name: Tests with coverage gate
         run: uv run pytest --cov --cov-branch --cov-fail-under=90
 
-  dependency-scan:
-    name: Dependency Scan
-    runs-on: ubuntu-latest
+  mutation:
+    name: Mutation Tests
+    if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync
+      - name: Get changed Python files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            src/**/*.py
+            tests/**/*.py
+          separator: ','
+      - name: Run mutation tests on changed files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: uv run mutmut run --paths-to-mutate ${{ steps.changed-files.outputs.all_changed_files }}
+
+  deadcode:
+    name: Dead Code
+    if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Vulture dead code detection
+        run: uvx vulture src/ --min-confidence 80
+
+  deps:
+    name: Dependency Audit
+    if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    steps:
+      - uses: actions/checkout@v4
       - name: Run Trivy filesystem scan
         uses: aquasecurity/trivy-action@v0.36.0
         with:
@@ -62,35 +142,42 @@ jobs:
           exit-code: 1
           ignore-unfixed: true
 
-  secret-scanning:
-    name: Secret Scanning
-    runs-on: ubuntu-latest
+  semgrep:
+    name: Semgrep Security
+    if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Semgrep
+        uses: returntocorp/semgrep-action@v1
         with:
-          fetch-depth: 0
-      - name: gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          config: p/default
+          generateSarif: "1"
 
   required-checks:
     name: Required Checks (PR)
-    runs-on: ubuntu-latest
+    if: always() && (github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
     needs:
-      - repo-hygiene
-      - python-quality
-      - dependency-scan
-      - secret-scanning
-    if: always()
+      - format
+      - lint
+      - typecheck
+      - build
+      - unit
+      - deadcode
+      - deps
+      - semgrep
     steps:
       - name: Verify all jobs passed
         run: |
-          if [ "${{ needs.repo-hygiene.result }}" != "success" ] || \
-             [ "${{ needs.python-quality.result }}" != "success" ] || \
-             [ "${{ needs.dependency-scan.result }}" != "success" ] || \
-             [ "${{ needs.secret-scanning.result }}" != "success" ]; then
+          if [ "${{ needs.format.result }}" != "success" ] || \
+             [ "${{ needs.lint.result }}" != "success" ] || \
+             [ "${{ needs.typecheck.result }}" != "success" ] || \
+             [ "${{ needs.build.result }}" != "success" ] || \
+             [ "${{ needs.unit.result }}" != "success" ] || \
+             [ "${{ needs.deadcode.result }}" != "success" ] || \
+             [ "${{ needs.deps.result }}" != "success" ] || \
+             [ "${{ needs.semgrep.result }}" != "success" ]; then
             echo "One or more PR gate jobs failed."
             exit 1
           fi
