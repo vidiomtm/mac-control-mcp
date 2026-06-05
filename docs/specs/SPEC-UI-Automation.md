@@ -22,8 +22,8 @@ Primary interaction layer for native macOS apps.
 ax_snapshot(app="Safari", max_depth=8, budget_chars=12000)
   → snapshot_app() traverses AX tree via AXUIElementCopyAttributeValue
   → _element_to_dict() recursively builds {role, title, value, frame, children}
-  → prune_tree() removes empty nodes, enforces depth
-  → trim_to_budget() truncates large text to fit token budget
+  → prune_tree() removes nodes with disallowed roles (if no children), enforces depth cap
+  → trim_to_budget() BFS-trims: drops deepest children first to fit token budget
   → returns JSON string
 ```
 
@@ -35,6 +35,7 @@ ax_click(x=100, y=200, button="left", count=1)
   → supports double-click via count=2
 
 ax_type(text="hello", clear_first=False)
+  → if clear_first: ax_hotkey(["cmd", "a"]) to select all
   → clipboard paste via NSPasteboard (handles unicode)
   → ax_hotkey(["cmd", "v"]) to paste
 
@@ -67,7 +68,7 @@ screen_ocr(region=[x,y,w,h])
   → AppleScript fallback when Vision framework unavailable
 
 screen_wait_for_change(region, timeout_s=10, poll_interval=0.5)
-  → periodic screenshot + diff detection
+  → periodic screenshot + MD5 hash comparison
   → returns {changed, elapsed_s, screenshot}
 ```
 
