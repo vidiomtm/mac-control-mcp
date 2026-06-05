@@ -10,8 +10,8 @@
 
 ## CI/CD
 - **SonarCloud:** project key `Jonathangadeaharder_mac-control-mcp`, organization `jonathangadeaharder`
-- **PR gate:** runs on `ubuntu-latest`, unit tests only (integration/e2e auto-skipped on non-macOS)
-- **Merge gate:** adds CodeQL, mutation testing, SonarCloud scan
+- **PR gate:** runs on self-hosted macOS arm64 runner, unit tests only (integration/e2e auto-skipped on non-macOS)
+- **Merge gate:** adds full mutation testing, SonarCloud scan
 - **PR-Agent:** self-hosted macOS runner, slash-command only (`/review`, `/describe`, etc.)
 
 ## macOS-Specific Testing

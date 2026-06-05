@@ -32,12 +32,12 @@ run() → FastMCP server → listen on stdin → JSON-RPC loop → EOF → exit
 
 ### Tool Registration
 
-All tools registered in `server.py:create_server()` via `@mcp.tool()` decorators. 26 tools total across 4 categories:
+All tools registered in `server.py:create_server()` via `@mcp.tool()` decorators. 30 tools total across 4 categories:
 
 1. **AX tools** (6): `ax_snapshot`, `ax_click`, `ax_type`, `ax_scroll`, `ax_hotkey`, `ax_system_ui`
 2. **Vision tools** (4): `screen_capture`, `screen_list_windows`, `screen_ocr`, `screen_wait_for_change`
 3. **OSA tools** (3): `osa_search`, `osa_run`, `osa_exec`
-4. **Apple app tools** (14): mail, calendar, reminders, notes, messages, contacts, finder, spotlight, quicklook
+4. **Apple app tools** (17): `mail_search`, `mail_recent`, `mail_send`, `calendar_events`, `calendar_create_event`, `reminders_list`, `reminders_add`, `notes_search`, `notes_get`, `notes_create`, `messages_recent`, `messages_send`, `contacts_search`, `spotlight_query`, `finder_tags_get`, `finder_tags_set`, `quicklook`
 
 ### Error Handling
 
@@ -51,7 +51,7 @@ All tools registered in `server.py:create_server()` via `@mcp.tool()` decorators
 ```python
 def create_server() -> FastMCP:
     mcp = FastMCP("mac-control", ...)
-    # ... register 26 tools ...
+    # ... register 30 tools ...
     return mcp
 
 def main() -> None:

@@ -32,7 +32,10 @@ The YAML knowledge base at `src/mac_control_mcp/osa/knowledge/` contains pre-wri
 | Messages | `messages_recent`, `messages_send` | `messages_contacts.yaml` |
 | Contacts | `contacts_search` | `messages_contacts.yaml` |
 | Finder | `finder_tags_get`, `finder_tags_set`, `quicklook` | `finder_spotlight.yaml` |
-| Spotlight | `spotlight_query` | `finder_spotlight.yaml` |
+| Spotlight | `spotlight_query` | *(calls `apple/spotlight.py` directly, not KB)* |
+| System | *(KB entries: `system_get_volume`, `system_set_volume`, `system_get_frontmost_app`, `system_list_running_apps`, `system_quit_app`, `system_open_url`, `system_screenshot_to_file`, `system_empty_trash`)* | `system.yaml` |
+
+**Note:** System KB entries exist in `system.yaml` but have no dedicated MCP tools — they're accessible only via `osa_search` + `osa_run`.
 
 ### Data Safety
 
@@ -51,13 +54,19 @@ The YAML knowledge base at `src/mac_control_mcp/osa/knowledge/` contains pre-wri
   args: [to, subject, body]
   tags: [mail, send, compose]
   script: |
-    tell application "Mail"
-      set newMessage to make new outgoing message with properties {subject: "<args[1]>", content: "<args[2]>"}
-      tell newMessage
-        make new to recipient at end of to recipients with properties {address:"<args[0]>"}
-        send
-      end tell
-    end tell
+    on run argv
+        set toAddr to item 1 of argv
+        set subj to item 2 of argv
+        set bodyText to item 3 of argv
+        tell application "Mail"
+            set newMsg to make new outgoing message with properties {subject:subj, content:bodyText, visible:false}
+            tell newMsg
+                make new to recipient with properties {address:toAddr}
+            end tell
+            send newMsg
+        end tell
+        return "sent"
+    end run
 ```
 
-Arguments are interpolated as `<args[N]>` strings. All scripts are vetted for security.
+Arguments are passed as positional argv (`item 1 of argv`, `item 2 of argv` for AppleScript; `argv[0]`, `argv[1]` for JXA). Scripts are executed via `osascript -e <script> -- <args>`. All scripts are vetted for security.
