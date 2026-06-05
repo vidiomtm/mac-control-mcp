@@ -79,7 +79,7 @@ def test_screen_list_windows_call() -> None:
         resp = recv(4)
     assert "result" in resp, f"Error: {resp.get('error')}"
     windows = json.loads(_extract_text(resp["result"]["content"]))
-    assert isinstance(windows, list)
+    assert isinstance(windows, list) and len(windows) > 0 and "id" in windows[0]
 
 
 @pytest.mark.e2e

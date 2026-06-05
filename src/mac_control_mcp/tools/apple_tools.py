@@ -21,7 +21,12 @@ def register_apple_tools(mcp: FastMCP) -> None:
         """
         from mac_control_mcp.osa.kb import run_by_id
 
-        result = run_by_id("mail_search_subject", args=[query])
+        args = [query]
+        if since:
+            args.append(since)
+        if until:
+            args.append(until)
+        result = run_by_id("mail_search_subject", args=args)
         return json.dumps(result)
 
     @mcp.tool()

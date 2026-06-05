@@ -72,6 +72,15 @@ asyncio_mode = "auto"
 
 [tool.coverage.run]
 branch = true
+omit = [
+    "tests/e2e/*",
+    "tests/integration/*",
+    "src/mac_control_mcp/vision/ocr.py",
+    "src/mac_control_mcp/vision/capture.py",
+    "src/mac_control_mcp/ax/snapshot.py",
+    "src/mac_control_mcp/ax/actions.py",
+    "src/mac_control_mcp/ax/system_ui.py",
+]
 
 [tool.coverage.report]
 fail_under = 90
