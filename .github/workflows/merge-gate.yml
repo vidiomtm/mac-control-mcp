@@ -17,6 +17,7 @@ jobs:
     name: Format Check
     if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -30,6 +31,7 @@ jobs:
     name: Lint
     if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -43,6 +45,7 @@ jobs:
     name: Type Check
     if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -56,6 +59,7 @@ jobs:
     name: Build
     if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -69,6 +73,7 @@ jobs:
     name: Unit Tests
     if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
@@ -88,6 +93,7 @@ jobs:
     name: Mutation Tests
     if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -109,6 +115,7 @@ jobs:
     name: Dead Code
     if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -122,6 +129,7 @@ jobs:
     name: Dependency Audit
     if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - name: Run Trivy filesystem scan
@@ -137,6 +145,7 @@ jobs:
     name: Semgrep Security
     if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - name: Semgrep
@@ -149,6 +158,7 @@ jobs:
     name: SonarCloud
     if: github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -162,7 +172,8 @@ jobs:
   required-checks:
     name: Required Checks (Merge)
     if: always() && (github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository)
-    runs-on: ["self-hosted", "macos", "arm64", "VidiomTM"]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
     needs:
       - format
       - lint
